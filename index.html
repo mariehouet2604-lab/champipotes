@@ -1,0 +1,24 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1C2A21">
+<title>Champi'Potes</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{color-scheme:light dark}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#E8EDE6;color:#1C2A21;font:16px/1.4 system-ui,sans-serif;padding:24px;box-sizing:border-box}
+@media (prefers-color-scheme:dark){body{background:#141B16;color:#E4EBE3}input{background:#1C251F;color:#E4EBE3;border-color:#2E3A31}}
+form{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px;text-align:center}img{width:96px;height:96px;border-radius:22px;margin:0 auto}
+input{font:inherit;padding:12px;border-radius:10px;border:1px solid #C9D3C7}button{font:700 1rem system-ui;padding:13px;border:0;border-radius:12px;background:#D9961A;color:#2A1C04}
+#err{color:#C2410C;min-height:1.2em}</style></head><body>
+<form id="f"><img src="icon-192.png" alt=""><b style="font-size:1.3rem">Champi'Potes</b><span>Entrez le mot de passe</span>
+<input id="pw" type="password" autocomplete="current-password" required><button>Ouvrir</button><span id="err"></span></form>
+<script>
+const IT=250000;
+async function dec(pw){const buf=new Uint8Array(await (await fetch("app.bin")).arrayBuffer());const salt=buf.slice(0,16),iv=buf.slice(16,28),ct=buf.slice(28);
+  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:IT,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv},key,ct))}
+async function open(pw,save){try{const html=await dec(pw);if(save)try{localStorage.setItem("champi-pw",pw)}catch{}
+  document.open();document.write(html);document.close();return true}catch(e){return false}}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+(async()=>{let s=null;try{s=localStorage.getItem("champi-pw")}catch{}if(s&&await open(s,false))return;
+  document.getElementById("f").onsubmit=async e=>{e.preventDefault();document.getElementById("err").textContent="Ouverture…";
+    if(!await open(document.getElementById("pw").value.trim(),true))document.getElementById("err").textContent="Mot de passe incorrect"}})();
+</script></body></html>
