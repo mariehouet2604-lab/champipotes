@@ -1,4 +1,4 @@
-const C="champi-8458526fcf";const F=["./","index.html","app.bin","manifest.webmanifest","icon-192.png","icon-512.png"];
+const C="champi-35305251ae";const F=["./","index.html","app.bin","manifest.webmanifest","icon-192.png","icon-512.png"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(C).then(c=>c.addAll(F)))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener("fetch",e=>{const u=new URL(e.request.url);if(u.origin!==location.origin)return;
