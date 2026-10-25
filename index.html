@@ -16,7 +16,14 @@ async function kGet(){const db=await IDB();if(!db)return null;return new Promise
 async function kPut(k){const db=await IDB();if(!db)return;db.transaction("k","readwrite").objectStore("k").put(k,"key")}
 async function derive(pw,salt){const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
   return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:IT,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"])}
-let BUF=null;async function buf(){if(!BUF)BUF=new Uint8Array(await (await fetch("app.bin")).arrayBuffer());return BUF}
+let BUF=null;async function buf(){if(BUF)return BUF;let r=null;
+  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),4000);const v=(await (await fetch("version.txt?t="+Date.now(),{cache:"no-store",signal:ctl.signal})).text()).trim();
+    let old=null;try{old=localStorage.getItem("champi-ver")}catch{}
+    let have=null;try{have=await (await caches.open("champi-data")).match("app.bin")}catch{}
+    if(v&&(v!==old||!have)){r=await fetch("app.bin?v="+v,{cache:"reload"});if(r.ok){const cp=r.clone();try{await (await caches.open("champi-data")).put("app.bin",cp)}catch{}try{localStorage.setItem("champi-ver",v)}catch{}}else r=null}}catch{}
+  if(!r){try{r=await (await caches.open("champi-data")).match("app.bin")}catch{}}
+  if(!r)r=await fetch("app.bin");
+  BUF=new Uint8Array(await r.arrayBuffer());return BUF}
 async function decWith(key){const b=await buf();let out=new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:b.slice(16,28)},key,b.slice(28)));
   if(out[0]===0x1f&&out[1]===0x8b){const ds=new Response(new Blob([out]).stream().pipeThrough(new DecompressionStream("gzip")));out=new Uint8Array(await ds.arrayBuffer())}
   return new TextDecoder().decode(out)}
