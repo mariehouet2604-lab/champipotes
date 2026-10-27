@@ -20,7 +20,7 @@ let BUF=null;async function buf(){if(BUF)return BUF;let r=null;
   try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),4000);const v=(await (await fetch("version.txt?t="+Date.now(),{cache:"no-store",signal:ctl.signal})).text()).trim();
     let old=null;try{old=localStorage.getItem("champi-ver")}catch{}
     let have=null;try{have=await (await caches.open("champi-data")).match("app.bin")}catch{}
-    if(v&&(v!==old||!have)){r=await fetch("app.bin?v="+v,{cache:"reload"});if(r.ok){const cp=r.clone();try{await (await caches.open("champi-data")).put("app.bin",cp)}catch{}try{localStorage.setItem("champi-ver",v)}catch{}}else r=null}}catch{}
+    if(v&&(v!==old||!have)){r=await fetch("app.bin?v="+v,{cache:"reload"});if(r.ok){const cp=r.clone();let ok=true;try{await (await caches.open("champi-data")).put("app.bin",cp)}catch{}try{const t=await fetch("tiles.bin?v="+v,{cache:"reload"});if(t.ok)await (await caches.open("champi-data")).put("tiles.bin",t);else ok=false}catch{ok=false}if(ok)try{localStorage.setItem("champi-ver",v)}catch{}}else r=null}}catch{}
   if(!r){try{r=await (await caches.open("champi-data")).match("app.bin")}catch{}}
   if(!r)r=await fetch("app.bin");
   BUF=new Uint8Array(await r.arrayBuffer());return BUF}
