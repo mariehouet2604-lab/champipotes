@@ -1,0 +1,43 @@
+name: Appli Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['app-android/**', '.github/workflows/android.yml']
+permissions:
+  contents: write
+concurrency:
+  group: apk
+  cancel-in-progress: true
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Préparer l'appli
+        working-directory: app-android
+        run: |
+          npm ci
+          mkdir -p www
+          cp ../index.html ../app.bin ../tiles.bin ../icon-192.png ../icon-512.png ../manifest.webmanifest ../version.txt www/
+          echo "${{ github.run_number }}" > www/apk-build.txt
+          npx cap sync android
+      - name: Fabriquer l'APK
+        working-directory: app-android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: Publier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app-android/android/app/build/outputs/apk/release/app-release.apk champipotes.apk
+          gh release delete apk --yes --cleanup-tag || true
+          gh release create apk champipotes.apk --title "Champi'Potes Android (version ${{ github.run_number }})" --notes "Version ${{ github.run_number }}" --latest

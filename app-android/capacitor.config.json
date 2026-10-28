@@ -1,0 +1,13 @@
+{
+  "appId": "fr.champipotes.carnet",
+  "appName": "Champi'Potes",
+  "webDir": "www",
+  "android": {
+    "useLegacyBridge": true,
+    "backgroundColor": "#E8EDE6",
+    "adjustMarginsForEdgeToEdge": "force"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
