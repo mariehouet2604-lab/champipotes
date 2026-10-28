@@ -11,16 +11,17 @@ input{font:inherit;padding:12px;border-radius:10px;border:1px solid #C9D3C7}butt
 <input id="pw" type="password" autocomplete="current-password" required><button>Ouvrir</button><span id="err"></span></form>
 <script>
 const IT=250000;
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());const RB=NATIVE?"https://mariehouet2604-lab.github.io/champipotes/":"";
 const IDB=()=>new Promise(r=>{try{const q=indexedDB.open("champi-k",1);q.onupgradeneeded=()=>q.result.createObjectStore("k");q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch{r(null)}});
 async function kGet(){const db=await IDB();if(!db)return null;return new Promise(r=>{const q=db.transaction("k").objectStore("k").get("key");q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null)})}
 async function kPut(k){const db=await IDB();if(!db)return;db.transaction("k","readwrite").objectStore("k").put(k,"key")}
 async function derive(pw,salt){const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
   return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:IT,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"])}
 let BUF=null;async function buf(){if(BUF)return BUF;let r=null;
-  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),4000);const v=(await (await fetch("version.txt?t="+Date.now(),{cache:"no-store",signal:ctl.signal})).text()).trim();
+  try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),4000);const v=(await (await fetch(RB+"version.txt?t="+Date.now(),{cache:"no-store",signal:ctl.signal})).text()).trim();
     let old=null;try{old=localStorage.getItem("champi-ver")}catch{}
     let have=null;try{have=await (await caches.open("champi-data")).match("app.bin")}catch{}
-    if(v&&(v!==old||!have)){r=await fetch("app.bin?v="+v,{cache:"reload"});if(r.ok){const cp=r.clone();let ok=true;try{await (await caches.open("champi-data")).put("app.bin",cp)}catch{}try{const t=await fetch("tiles.bin?v="+v,{cache:"reload"});if(t.ok)await (await caches.open("champi-data")).put("tiles.bin",t);else ok=false}catch{ok=false}if(ok)try{localStorage.setItem("champi-ver",v)}catch{}}else r=null}}catch{}
+    if(v&&(v!==old||!have)){r=await fetch(RB+"app.bin?v="+v,{cache:"reload"});if(r.ok){const cp=r.clone();let ok=true;try{await (await caches.open("champi-data")).put("app.bin",cp)}catch{}try{const t=await fetch(RB+"tiles.bin?v="+v,{cache:"reload"});if(t.ok)await (await caches.open("champi-data")).put("tiles.bin",t);else ok=false}catch{ok=false}if(ok)try{localStorage.setItem("champi-ver",v)}catch{}}else r=null}}catch{}
   if(!r){try{r=await (await caches.open("champi-data")).match("app.bin")}catch{}}
   if(!r)r=await fetch("app.bin");
   BUF=new Uint8Array(await r.arrayBuffer());return BUF}
@@ -30,7 +31,7 @@ async function decWith(key){const b=await buf();let out=new Uint8Array(await cry
 async function open(pw,save){try{const b=await buf();const key=await derive(pw,b.slice(0,16));const html=await decWith(key);
   if(save)try{localStorage.setItem("champi-pw",pw)}catch{}kPut(key);show(html);return true}catch(e){return false}}
 function show(html){document.open();document.write(html);document.close()}
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+if(!NATIVE&&"serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 (async()=>{try{const k=await kGet();if(k){show(await decWith(k));return}}catch(e){}let s=null;try{s=localStorage.getItem("champi-pw")}catch{}if(s&&await open(s,false))return;
   document.getElementById("f").onsubmit=async e=>{e.preventDefault();document.getElementById("err").textContent="Ouverture…";
     if(!await open(document.getElementById("pw").value.trim(),true))document.getElementById("err").textContent="Mot de passe incorrect"}})();

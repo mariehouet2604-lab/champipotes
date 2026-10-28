@@ -13,11 +13,11 @@ jobs:
   apk:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -33,7 +33,16 @@ jobs:
         working-directory: app-android/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          set -o pipefail
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/build.log
+      - name: Journal en cas d'échec
+        if: failure()
+        run: |
+          git config user.name "build"; git config user.email "build@localhost"
+          git checkout --orphan build-log
+          git rm -rfq .
+          tail -c 60000 /tmp/build.log > build.log || echo "pas de journal" > build.log
+          git add build.log; git commit -qm "journal"; git push -f origin build-log
       - name: Publier
         env:
           GH_TOKEN: ${{ github.token }}
