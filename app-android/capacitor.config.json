@@ -5,7 +5,7 @@
   "android": {
     "useLegacyBridge": true,
     "backgroundColor": "#E8EDE6",
-    "adjustMarginsForEdgeToEdge": "force"
+    "adjustMarginsForEdgeToEdge": "disable"
   },
   "server": {
     "androidScheme": "https"
